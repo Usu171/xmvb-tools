@@ -68,11 +68,10 @@ def ReadOrbGus(filename, n):
             if line.startswith(' --------------Initial Guess--------------'):
                 num_start = True
                 continue
-            parts = line.split()
             if num_start:
+                parts = line.split()
                 if '.' not in parts[0]:
                     c.append(line.split())
-                    continue
                 else:
                     if not item_start:
                         c1 = [int(item) for row in c for item in row]
@@ -206,13 +205,13 @@ qaq
         mol.write(basis)
         mol.write('\n' * 3)
         mol.write('''[6D10F]\n[MO]\n''')
-        for i in range(0, n):
+        for i in range(n):
             mol.write('''Sym=     1a
 Ene= 1.0
 Spin= Alpha
 Occup= 2.000000
 ''')
-            for j in range(0, n):
+            for j in range(n):
                 mol.write(f'{j+1:>4}  {matrix[j,i]:>15.10f}\n')
 
 

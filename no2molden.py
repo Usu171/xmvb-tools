@@ -174,12 +174,12 @@ def ReadEig(filename, n):
 def WriteMolden(file):
     n = ReadNxmo(f'{file}.xmo')
 
-    eigenvalues, eigenvectors = ReadEig(f'xmvb.no', n)
+    eigenvalues, eigenvectors = ReadEig('xmvb.no', n)
 
     eigenvalues, eigenvectors = SortEig1(eigenvalues, eigenvectors)
 
     basis, eigenvectors = ReadBasis(f'{file}.xmo', eigenvectors)
-    
+
 
     print(np.sum(eigenvalues))
     geo = ReadGEOxmo(f'{file}.xmo')
@@ -196,13 +196,13 @@ qaq
         mol.write(basis)
         mol.write('\n' * 3)
         mol.write('''[6D10F]\n[MO]\n''')
-        for i in range(0, n):
+        for i in range(n):
             mol.write(f'''Sym=     1a
 Ene= 1.0
 Spin= Alpha
 Occup= {eigenvalues[i]:>15.10f}
 ''')
-            for j in range(0, n):
+            for j in range(n):
                 mol.write(f'{j+1:>4}  {eigenvectors[j,i]:>15.10f}\n')
 
 

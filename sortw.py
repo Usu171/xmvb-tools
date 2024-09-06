@@ -29,8 +29,8 @@ def sort_vb_weights(filename, type1='w'):
                     weight = float(parts[1])
                     num = int(parts[0])
                     info = ''.join(f'{i:>4}' for i in parts[3:])
-                    str = (weight, num, info)
-                    str_data.append(str)
+                    str1 = (weight, num, info)
+                    str_data.append(str1)
 
     str_data.sort(reverse=True, key=lambda x: x[0])
 

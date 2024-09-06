@@ -138,10 +138,11 @@ def Write(filename, matrix):
 
         data = [f'# ORBITAL{col + 1:>11}']
         for i in range(0, len(non_zero_values), 4):
-            line = ''
-            for j in range(4):
-                if i + j < len(non_zero_values):
-                    line += f'{non_zero_values[i + j]:>13.10f} {non_zeros[i + j] + 1:>5}  '
+            line = ''.join(
+                f'{non_zero_values[i + j]:>13.10f} {non_zeros[i + j] + 1:>5}  '
+                for j in range(4)
+                if i + j < len(non_zero_values)
+            )
             data.append(line)
         details.append(data)
 
@@ -238,7 +239,7 @@ Input \'q\' to write and exit\n''')
                         (result, c[:, col].reshape(-1, 1)))
             else:
                 atoms, cols = inp.split()
-                atoms = sorted([x for x in ParseInp(atoms)])
+                atoms = sorted(list(ParseInp(atoms)))
                 cols = [x - 1 for x in ParseInp(cols)]
                 if atoms[-1] > natm or max(
                         cols) >= col_len or atoms[0] < 1 or min(cols) < 0:
