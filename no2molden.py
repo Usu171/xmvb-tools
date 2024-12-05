@@ -1,5 +1,21 @@
+# Copyright (C) 2024  Usu171
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import re
 import sys
+
 import numpy as np
 
 
@@ -46,7 +62,7 @@ def ReadGEOxmo(filename):
     return ''.join(geo)
 
 
-def ChangeD(matrix, i):
+def reorderD(matrix, i):
     temp = matrix[i + 1:i + 6, :].copy()
     matrix[i + 1, :] = temp[2, :]  # XY 0  YY i+1
     matrix[i + 2, :] = temp[4, :]  # XZ 1  ZZ
@@ -56,7 +72,7 @@ def ChangeD(matrix, i):
     return matrix
 
 
-def ChangeF(matrix, i):
+def reorderF(matrix, i):
     temp = matrix[i + 1:i + 10,].copy()
     matrix[i + 1, :] = temp[5, :]  # XXY 0  YYY i+1
     matrix[i + 2, :] = temp[8, :]  # XXZ 1  ZZZ
@@ -123,10 +139,10 @@ def ReadBasis(filename, matrix):
                         elif orbital_type == 'P':
                             count1 += 3
                         elif orbital_type == 'D':
-                            ChangeD(matrix, count1)
+                            reorderD(matrix, count1)
                             count1 += 6
                         elif orbital_type == 'F':
-                            ChangeF(matrix, count1)
+                            reorderF(matrix, count1)
                             count1 += 10
                         while line and line.strip():
                             parts = line.split()
