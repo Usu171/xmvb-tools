@@ -166,11 +166,11 @@ def ReadMolden(filename):
         'MO': process_MO,
         'TITLE': process_title
     }
-    d5f10 = ('5D', '7F', '9G')
+    d5f7 = ('5D', '7F', '9G')
     d6f10 = ('6D', '10F', '15G')
     with open(filename, 'r') as file:
         for name, part in read_parts(file):
-            if name in d5f10:
+            if name in d5f7:
                 mol['is_Cartesian'] = False
             elif name in d6f10:
                 mol['is_Cartesian'] = True
