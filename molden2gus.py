@@ -376,8 +376,9 @@ Input \'q\' to write and exit\n''')
             if inp.lower() == 'q':
                 mol['orbs'] = result
                 WriteMolden(mol, f'{filename}_gus.molden')
+                print(f'{filename}_gus.molden has been written')
 
-                if mol['is_Cartesian']:
+                if mol['is_Cartesian'] and all(i <= 10 for i in basis_type):
                     count = 0
                     for i in basis_type:
                         if i == 6:
@@ -386,8 +387,8 @@ Input \'q\' to write and exit\n''')
                             reorderFi(result, count)
                         count += i
 
-                Write(f'{filename}.gus', result)
-                print(f'{filename}.gus has been written')
+                    Write(f'{filename}.gus', result)
+                    print(f'{filename}.gus has been written')
 
                 break
             elif inp.lower().startswith('r'):
