@@ -23,10 +23,10 @@ basis_dict = {
     'D': 2,
     'F': 3,
     'G': 4,
-    'I': 5,
-    'j': 6,
-    'K': 7,
-    'L': 8
+    'H': 5,
+    'I': 6,
+    'J': 7,
+    'K': 8
 }
 
 reversed_basis_dict = {v: k for k, v in basis_dict.items()}
