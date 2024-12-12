@@ -184,8 +184,6 @@ def ReadEig(filename, n):
 
     return np.array(eigenvalues), eigenvectors
 
-# 示例用法
-
 
 def WriteMolden(file):
     n = ReadNxmo(f'{file}.xmo')

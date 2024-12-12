@@ -26,7 +26,7 @@ python molden2gus.py <.molden文件>
 
 ```
 
-借用了pyscf.tools.molden，需要安装pyscf才能使用
+~~借用了pyscf.tools.molden，需要安装pyscf才能使用~~ 现在不需要了
 
 该脚本读取.molden文件中的轨道给XMVB提供初猜
 

@@ -14,91 +14,239 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import sys
-
+import re
 import numpy as np
-from pyscf.tools.molden import *
+
+basis_dict = {
+    'S': 0,
+    'P': 1,
+    'D': 2,
+    'F': 3,
+    'G': 4,
+    'I': 5,
+    'j': 6,
+    'K': 7,
+    'L': 8
+}
+
+reversed_basis_dict = {v: k for k, v in basis_dict.items()}
 
 
-def _parse_mo(lines, envs):
-    mol = envs['mol']
-    if not mol._built:
-        try:
-            mol.build(0, 0)
-        except RuntimeError:
-            mol.build(0, 0, spin=1)
+def read_parts(file):
+    current_part = []
+    current_part_name = None
+    in_part = False
 
-    irrep_labels = []
-    mo_energy = []
-    spins = []
-    mo_occ = []
-    mo_coeff_prim = []  # primary data, will be reworked for missing values
-    coeff_idx = []
-    mo_id = 0
-    for line in lines[1:]:
-        line = line.upper()
-        if 'SYM' in line:
-            irrep_labels.append(line.split('=')[1].strip())
-        elif 'ENE' in line:
-            mo_energy.append(float(_d2e(line).split('=')[1].strip()))
-            mo_id = len(mo_energy) - 1
-        elif 'SPIN' in line:
-            spins.append(line.split('=')[1].strip())
-        elif 'OCC' in line:
-            mo_occ.append(float(_d2e(line.split('=')[1].strip())))
+    for line in file:
+        line = line.strip()
+        if not line or line.startswith('#'):
+            continue
+
+        if match1 := re.match(r'^\[(.*)\]', line):
+            if in_part:
+                yield current_part_name, current_part
+                current_part = []
+            current_part_name = match1[1].upper()
+            in_part = True
+        elif in_part:
+            current_part.append(line)
+
+    if current_part_name is not None:
+        yield current_part_name, current_part
+
+
+def process_title(part, mol):
+    if 'orca' in part[0]:
+        mol['Title'] = 'orca'
+
+
+def read_GTO_parts(part):
+    current_part = []
+    number = None
+    in_part = False
+    for line in part:
+        if match1 := re.match(r'^(\d+)\s*0$', line):
+            if in_part:
+                yield number, current_part
+                current_part = []
+            number = int(match1[1])
+            in_part = True
+        elif in_part:
+            current_part.append(line)
+    if number is not None:
+        yield number, current_part
+
+
+def read_basis_parts(part):
+    current_part = []
+    basis_type = None
+    in_part = False
+    for line in part:
+        parts = line.upper().split()
+        if parts[0] in basis_dict:
+            if in_part:
+                yield basis_type, current_part
+                current_part = []
+            basis_type = basis_dict[parts[0]]
+            in_part = True
+        elif in_part:
+            basis_list = [float(i) for i in parts]
+            current_part.append(basis_list)
+
+    yield basis_type, current_part
+
+
+def read_MO_parts(part):
+    orbs = []
+    orb = []
+    sym_list = []
+    energy_list = []
+    spin_list = []
+    occup_list = []
+
+    in_part = False
+    for line in part:
+        line = [i.strip() for i in line.upper().split('=')]
+        if line[0][0].isalpha():
+            if line[0].startswith('SYM'):
+                sym_list.append(line[1])
+            elif line[0].startswith('ENE'):
+                energy_list.append(float(line[1]))
+            elif line[0].startswith('SPIN'):
+                spin_list.append(line[1])
+            elif line[0].startswith('OCC'):
+                occup_list.append(float(line[1]))
+            if in_part:
+                in_part = False
+                orbs.append(orb)
+                orb = []
         else:
-            ao_id, c = line.split()[:2]
-            coeff_idx.append([int(ao_id) - 1, mo_id])
-            mo_coeff_prim.append(float(c))
+            in_part = True
+            orb.append(float(line[0].split()[1]))
 
-    coeff_idx = np.array(coeff_idx)
-    number_of_aos, number_of_mos = coeff_idx.max(axis=0) + 1
-    mo_coeff = np.zeros([number_of_aos, number_of_mos])
-    mo_coeff[coeff_idx[:, 0], coeff_idx[:, 1]] = mo_coeff_prim
-
-    mo_energy = np.array(mo_energy)
-    mo_occ = np.array(mo_occ)
-
-    return mol, mo_energy, mo_coeff, mo_occ, irrep_labels, spins
+    orbs.append(orb)
+    return orbs, sym_list, energy_list, spin_list, occup_list
 
 
-def orbital_coeff(mol, fout, mo_coeff, spin='Alpha', symm=None, ene=None,
-                  occ=None, ignore_h=IGNORE_H):
-    from pyscf.symm import label_orb_symm
+def process_Atoms(part, mol):
+    atoms_dict = {}
+    for line in part:
+        element, number, charge, x, y, z = line.split()
+        number = int(number)
+        charge = int(charge)
+        coordinate = np.array([float(x), float(y), float(z)])
+        atoms_dict[number] = [element, charge, coordinate]
+    mol['Atoms'] = atoms_dict
 
-    if ignore_h:
-        mol, mo_coeff = remove_high_l(mol, mo_coeff)
 
-    nmo = mo_coeff.shape[1]
-    if symm is None:
-        symm = ['A']*nmo
-        if mol.symmetry:
-            try:
-                symm = label_orb_symm(mol, mol.irrep_name, mol.symm_orb,
-                                      mo_coeff, tol=1e-5)
-            except ValueError as e:
-                logger.warn(mol, str(e))
-    if ene is None or len(ene) != nmo:
-        ene = np.arange(nmo)
-    assert (spin == 'Alpha' or spin == 'Beta')
-    if occ is None:
-        occ = np.zeros(nmo)
-        neleca, nelecb = mol.nelec
-        if spin == 'Alpha':
-            occ[:neleca] = 1
-        else:
-            occ[:nelecb] = 1
+def process_GTO(part, mol):
+    gto_dict = {
+        number:
+        [[basis_type, line] for basis_type, line in read_basis_parts(part1)]
+        for number, part1 in read_GTO_parts(part)
+    }
+    mol['GTO'] = gto_dict
 
-    if spin == 'Alpha':
-        # Avoid duplicated [MO] session when dumping beta orbitals
-        fout.write('[MO]\n')
 
-    for imo in range(nmo):
-        fout.write(' Sym= %s\n' % symm[imo])
-        fout.write(' Ene= %15.10g\n' % ene[imo])
-        fout.write(' Spin= %s\n' % spin)
-        fout.write(' Occup= %10.5f\n' % occ[imo])
-        for i in mo_coeff.shape[1]:
-            fout.write(' %3d    %18.14g\n' % (i+1, mo_coeff[i]))
+def process_MO(part, mol):
+
+    orbs, sym_list, energy_list, spin_list, occup_list = read_MO_parts(part)
+    mol['orbs'] = np.array(orbs).T
+    mol['sym'] = sym_list
+    mol['energy'] = energy_list
+    mol['spin'] = spin_list
+    mol['occ'] = occup_list
+
+
+def ReadMolden(filename):
+    mol = {'is_Cartesian': False, 'Title': 'qwq'}
+    valid_part = {
+        'ATOMS': process_Atoms,
+        'GTO': process_GTO,
+        'MO': process_MO,
+        'TITLE': process_title
+    }
+    d5f10 = ('5D', '7F', '9G')
+    d6f10 = ('6D', '10F', '15G')
+    with open(filename, 'r') as file:
+        for name, part in read_parts(file):
+            if name in d5f10:
+                mol['is_Cartesian'] = False
+            elif name in d6f10:
+                mol['is_Cartesian'] = True
+            elif name in valid_part:
+                valid_part[name](part, mol)
+    d5_ao_number = sum(
+        basis[0] * 2 + 1 for atom in mol['GTO'].values() for basis in atom
+    )
+    d6_ao_number = sum(
+        (basis[0] + 1) * (basis[0] + 2) // 2
+        for atom in mol['GTO'].values()
+        for basis in atom
+    )
+    if mol['orbs'].shape[0] == d5_ao_number:
+        mol['is_Cartesian'] = False
+    elif mol['orbs'].shape[0] == d6_ao_number:
+        mol['is_Cartesian'] = True
+    return mol
+
+
+def WriteHead(file, title):
+    file.write('[Molden Format]\n[Title]\n')
+    if title == 'orca':
+        file.write('Molden file created by orca_2mkl for BaseName=1\n')
+    else:
+        file.write(f'{title}\n')
+
+
+def WriteAtoms(file, Atoms):
+    file.write('[Atoms] AU\n')
+    for number, atom in Atoms.items():
+        element, charge, coordinate = atom
+        file.write(
+            f'{element:>3} {number:>3} {charge:>3} {coordinate[0]:>17.10f} {coordinate[1]:>17.10f} {coordinate[2]:>17.10f}\n'
+        )
+
+
+def WriteGTO(file, GTO):
+    file.write('[GTO]\n')
+    for number, basis_list in GTO.items():
+        file.write(f'{number} 0\n')
+        for basis_type, basis_line in basis_list:
+            file.write(
+                f' {reversed_basis_dict[basis_type].lower()} {len(basis_line)} 1.0\n'
+            )
+            for basis in basis_line:
+                file.write(f'  {basis[0]:>15.10f} {basis[1]:>15.10f}\n')
+        file.write('\n')
+
+
+def WriteBasisType(file, is_Cartesian):
+    if is_Cartesian:
+        file.write('[6D]\n[10F]\n[15G]\n')
+    else:
+        file.write('[5D]\n[7F]\n[9G]\n')
+
+
+def WriteMO(file, orbs):
+    file.write('[MO]\n')
+    for i in range(orbs.shape[1]):
+        file.write('''Sym=     1a
+Ene= 1.0
+Spin= Alpha
+Occup= 2.000000
+''')
+        for j in range(orbs.shape[0]):
+            file.write(f'{j+1:>4}  {orbs[j,i]:>15.12f}\n')
+
+
+def WriteMolden(mol, filename):
+    with open(filename, 'w') as file:
+        WriteHead(file, mol['Title'])
+        WriteAtoms(file, mol['Atoms'])
+        WriteGTO(file, mol['GTO'])
+        WriteBasisType(file, mol['is_Cartesian'])
+        WriteMO(file, mol['orbs'])
 
 
 def ExtractRows(matrix, atoms, column_index, position):
@@ -191,20 +339,31 @@ def ParseInp(str):
 
 
 def main(filename):
-    a = read(f'{filename}.molden')
-    natm = a[0].natm
-    c = a[2]
+    mol = ReadMolden(f'{filename}.molden')
+    natm = len(mol['Atoms'])
+    c = mol['orbs']
     row_len, col_len = c.shape
-    count = 0
-    basis_type = [(i[0] + 1) * (i[0] + 2) // 2
-                for key in a[0]._basis.values()
-                for i in key]
 
-    position = np.cumsum([
-        sum((i[0] + 1) * (i[0] + 2) // 2
-            for i in key)
-        for key in a[0]._basis.values()
-    ])
+    if mol['is_Cartesian']:
+        basis_type = [(basis[0] + 1) * (basis[0] + 2) // 2
+            for atom in mol['GTO'].values()
+            for basis in atom]
+
+        position = np.cumsum([
+            sum((basis[0] + 1) * (basis[0] + 2) // 2
+                for basis in atom)
+            for atom in mol['GTO'].values()
+        ])
+    else:
+        basis_type = [basis[0] * 2 + 1
+            for atom in mol['GTO'].values()
+            for basis in atom]
+
+        position = np.cumsum([
+            sum(basis[0] * 2 + 1
+                for basis in atom)
+            for atom in mol['GTO'].values()
+        ])
     result = np.empty((row_len, 0))
     while True:
         inp = input('''Please input atom numbers and orbital numbers
@@ -215,14 +374,17 @@ Input \'m<num> <col>\' to multip orbital by <num>
 Input \'q\' to write and exit\n''')
         try:
             if inp.lower() == 'q':
-                from_mo(a[0], f'{filename}_gus.molden', result)
+                mol['orbs'] = result
+                WriteMolden(mol, f'{filename}_gus.molden')
 
-                for i in basis_type:
-                    if i == 6:
-                        reorderDi(result, count)
-                    elif i == 10:
-                        reorderFi(result, count)
-                    count += i
+                if mol['is_Cartesian']:
+                    count = 0
+                    for i in basis_type:
+                        if i == 6:
+                            reorderDi(result, count)
+                        elif i == 10:
+                            reorderFi(result, count)
+                        count += i
 
                 Write(f'{filename}.gus', result)
                 print(f'{filename}.gus has been written')
