@@ -133,7 +133,7 @@ def process_Atoms(part, mol):
     for line in part:
         element, number, charge, x, y, z = line.split()
         number = int(number)
-        charge = int(charge)
+        charge = float(charge)
         coordinate = np.array([float(x), float(y), float(z)])
         atoms_dict[number] = [element, charge, coordinate]
     mol['Atoms'] = atoms_dict
@@ -203,8 +203,12 @@ def WriteAtoms(file, Atoms):
     file.write('[Atoms] AU\n')
     for number, atom in Atoms.items():
         element, charge, coordinate = atom
+        if isinstance(charge, int) or (isinstance(charge, float) and charge.is_integer()):
+            charge_str = f'{int(round(charge)):>3}'
+        else:
+            charge_str = f'{charge:>10.6f}'
         file.write(
-            f'{element:>3} {number:>3} {charge:>3} {coordinate[0]:>17.10f} {coordinate[1]:>17.10f} {coordinate[2]:>17.10f}\n'
+            f'{element:>3} {number:>3} {charge_str} {coordinate[0]:>17.10f} {coordinate[1]:>17.10f} {coordinate[2]:>17.10f}\n'
         )
 
 
