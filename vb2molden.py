@@ -129,7 +129,7 @@ def reorderF(matrix, i):
 
 
 def ReadBasis(filename, matrix):
-    atom_pattern = re.compile(r'\b[A-Z][A-Z]?\b')
+    atom_pattern = re.compile(r'\b[A-Z][a-z]?\b')
     output = []
     count1 = 0
     atom_index = 0
