@@ -1,137 +1,152 @@
-## vb2molden.py
+# xmvb-tools
+
+`xmvb-tools` is a package for converting XMVB orbital data to and from Molden-related formats.
+
+It currently provides five command-line tools:
+- `vb2molden`
+- `gus2molden`
+- `molden2gus`
+- `no2molden`
+- `sortw`
 
 
-
-```bash
-
-python vb2molden.py <.orb文件> <.xmo文件>
-
-```
-
-(文件名不包含后缀)
-
-该脚本从.orb中读取轨道信息，从.xmo文件中读取分子结构、基组、基函数数量(需要`int=libcint`)
-
-输出与.orb文件名相同的.molden
-
-
-
-## molden2gus.py
-
-
+## Installation
 
 ```bash
-
-python molden2gus.py <.molden文件>
-
+pip install xmvb-tools
 ```
 
-~~借用了pyscf.tools.molden，需要安装pyscf才能使用~~ 现在不需要了
+## Requirements
 
-该脚本读取.molden文件中的轨道给XMVB提供初猜
+- Python 3.10+
+- `numpy`
 
-输出记录初猜轨道的.gus文件和记录初猜轨道的_gus.molden文件
+## Scripts
 
+### `vb2molden`
 
-
-将Gaussian等软件输出的轨道定域化之后使用此脚本提供初猜
-
-
-
-使用方法:
-
-输入`<原子> <轨道>`
-
-例如: `2,4 6-8,9`
-
-将2,4号原子的第6~8,9轨道添加到初猜中(添加4个轨道)
-
-
-
-输入`a <轨道>`添加所有原子
-
-
-
-输入`r<角度> <轨道1>,<轨道2>`旋转两个轨道(乘对应的2维旋转矩阵)
-
-
-
-输入`m<数字> <轨道>`将轨道系数乘以<数字>(可以是负数)
-
-
-
-输入`q`退出
-
-
-
-可以将输入写到`.txt`文件中使用`< .txt`提供输入
-
-
-
-## gus2molden.py
-
-
+Convert XMVB VB orbitals from `.orb` , basis/geometry information from `.xmo` into a Molden file.
 
 ```bash
-
-python gus2molden.py <.xdat文件> <.xmo文件>
-
+vb2molden <orb_prefix> <xmo_prefix>
 ```
 
-该脚本读取.xdat文件中的初猜轨道，从.xmo文件中读取分子结构、基组、基函数数量(需要`int=libcint`)
-
-输出与.xdat文件名相同的.molden
-
-
-
-用于检查初猜
-
-
-
-
-
-## sortw.py
-
-
+Example:
 
 ```bash
-
-python sortw.py <.xmo文件> <参数(可选)>
-
+vb2molden C6H6_xmvb4 C6H6_xmvb4
 ```
 
-排序权重/系数
+Output:
+- `<orb_prefix>.molden`
 
-默认参数为w
-
-w: WEIGHTS OF STRUCTURES
-
-l: Lowdin Weights
-
-i: Inverse Weights
-
-r: Renormalized Weights
-
-c: COEFFICIENTS OF STRUCTURES
-
-lc: LOWDIN ORTHOGONALIZED COEFFICIENTS OF STRUCTURES
+Options:
+- `-b`: disable basis conversion before writing the Molden GTO section
 
 
+### `gus2molden`
 
-## no2molden.py
-
-
+Convert XMVB guess orbitals embedded in an `.xmo` file into a Molden file.
 
 ```bash
-
-python no2molden.py <.xmo文件>
-
+gus2molden <xmo_prefix>
 ```
 
-读取xmvb.no中的自然轨道，从.xmo文件中读取分子结构、基组、基函数数量(需要`int=libcint`)
+Example:
 
-输出与.xmo文件名相同的.molden
+```bash
+gus2molden C6H6_xmvb4
+```
+
+Output:
+- `<xmo_prefix>_vbgus.molden`
+
+Options:
+- `-b`: disable basis conversion before writing the Molden GTO section
 
 
+### `molden2gus`
 
-如果怀疑轨道文件不正确可以用Multiwfn的1000 100功能检查波函数是否归一化
+Read a Molden orbital file and interactively build an XMVB guess orbital file.
+
+```bash
+molden2gus <molden_prefix>
+```
+
+Example:
+
+```bash
+molden2gus SO4_lo
+```
+
+Output:
+- `<molden_prefix>_gus.molden`
+- `<molden_prefix>.gus`
+
+Interactive commands:
+- `<atoms> <orbitals>`: extract selected orbitals on selected atoms
+- `a <orbitals>`: add whole orbitals for all atoms
+- `r<angle> <orb1>,<orb2>`: rotate two orbitals by the given angle in degrees
+- `m<number> <orbital>`: multiply one orbital by a scalar
+- `q`: write output files and exit
+
+Examples:
+- `2,4 6-8,9`
+- `a 1-5`
+- `r45 1,2`
+- `m-1 4`
+
+You can also redirect commands from a text file:
+
+```bash
+molden2gus xx < xx.txt
+```
+
+### `no2molden`
+
+Convert natural orbitals embedded directly in a modern XMVB `.xmo` file into a Molden file.
+
+```bash
+no2molden <xmo_prefix>
+```
+
+Example:
+
+```bash
+no2molden C6H6_xmvb4
+```
+
+Output:
+- `<xmo_prefix>_no.molden`
+
+Options:
+- `-b`: disable basis conversion before writing the Molden GTO section
+
+
+### `sortw`
+
+Sort and print XMVB structure weights or coefficients from an `.xmo` file.
+
+```bash
+sortw <xmo_prefix> [weight_type]
+```
+
+Example:
+
+```bash
+sortw C6H6_xmvb4 w
+```
+
+Supported `weight_type` values:
+- `w`: `WEIGHTS OF STRUCTURES`
+- `l`: `Lowdin Weights`
+- `i`: `Inverse Weights`
+- `r`: `Renormalized Weights`
+- `c`: `COEFFICIENTS OF STRUCTURES`
+
+default: `w`
+
+
+## License
+
+GPL-3.0-or-later
