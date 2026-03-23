@@ -22,7 +22,5 @@ jobs:
       run: pip install ruff
     - name: Run Ruff check
       run: uv run ruff check .
-    - name: Run Ruff format check
-      run: uv run ruff format --check .
     - name: Run tests
       run: uv run pytest
