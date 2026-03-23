@@ -145,8 +145,3 @@ Supported `weight_type` values:
 - `c`: `COEFFICIENTS OF STRUCTURES`
 
 default: `w`
-
-
-## License
-
-GPL-3.0-or-later
