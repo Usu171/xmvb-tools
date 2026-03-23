@@ -23,7 +23,6 @@ def sort_vb_weights(filename, type1='w'):
         'i': 'Inverse Weights',
         'r': 'Renormalized Weights',
         'c': 'COEFFICIENTS OF STRUCTURES',
-        'lc': 'LOWDIN ORTHOGONALIZED COEFFICIENTS OF STRUCTURES',
     }
     wei_type1 = wei_type[type1]
     with open(f'{filename}.xmo', 'r') as file:
@@ -43,7 +42,7 @@ def sort_vb_weights(filename, type1='w'):
                 if len(parts) > 1:
                     weight = float(parts[1])
                     num = int(parts[0])
-                    info = ''.join(f'{i:>4}' for i in parts[3:])
+                    info = line.split('******')[1].strip() if '******' in line else ''
                     str1 = (weight, num, info)
                     str_data.append(str1)
 

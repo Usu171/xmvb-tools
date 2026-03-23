@@ -78,9 +78,9 @@ def ReadOrbGus(filename, n):
     with open(filename, 'r') as file:
         c = []
         for line in file:
-            if line.startswith(' --------------End of Guess--------------'):
+            if line.startswith('---------------End of Guess--------------'):
                 break
-            if line.startswith(' --------------Initial Guess--------------'):
+            if line.startswith('---------------Initial Guess---------------'):
                 num_start = True
                 continue
             if num_start:
@@ -202,7 +202,8 @@ def ReadBasis(filename, matrix):
 def WriteMolden(file, file2):
     n = ReadNxmo(f'{file2}.xmo')
 
-    matrix = ReadOrbGus(f'{file}.xdat', n)
+    matrix = ReadOrbGus(f'{file}.xmo', n)
+
     # matrix = ChangeBasis(matrix, 'INFO')
 
     basis, matrix = ReadBasis(f'{file2}.xmo', matrix)
