@@ -9,6 +9,11 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/xmvb_tools
+    permissions:
+      id-token: write
 
     steps:
       - name: Checkout
