@@ -21,8 +21,10 @@ no2molden = "xmvb_tools.no2molden:cli"
 
 
 [project.optional-dependencies]
-test = ["pytest", "pytest-cov"]
-lint = ["ruff"]
+
+
+[dependency-groups]
+dev = ["pytest", "pytest-cov", "ruff"]
 
 
 [tool.uv.build-backend]
