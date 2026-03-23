@@ -302,22 +302,21 @@ def ReadEig(filename, n):
     col = -1
     with open(filename, 'r') as file:
         for line in file:
-            if line:
-                parts = line.split()
-                eigenvalues.append(float1(parts[0]))
-                col += 1
-                for row in range(row1 + 1):
-                    parts = next(file).split()
-                    i = row * 5
-                    if row2 == 0 and row == row1 - 1:
-                        break
-                    if row == row1:
-                        eigenvectors[i : i + row2, col] = [float1(v) for v in parts]
-                        break
-                    eigenvectors[i : i + 5, col] = [float1(v) for v in parts]
-            else:
+            if not line:
                 break
 
+            parts = line.split()
+            eigenvalues.append(float1(parts[0]))
+            col += 1
+            for row in range(row1 + 1):
+                parts = next(file).split()
+                i = row * 5
+                if row2 == 0 and row == row1 - 1:
+                    break
+                if row == row1:
+                    eigenvectors[i : i + row2, col] = [float1(v) for v in parts]
+                    break
+                eigenvectors[i : i + 5, col] = [float1(v) for v in parts]
     return np.array(eigenvalues), eigenvectors
 
 
