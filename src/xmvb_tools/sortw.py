@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import sys
+import argparse
 
 
-def sort_vb_weights(filename, type1='w'):
+def sort_vb_weights(filename, weight_type='w'):
     wei_type = {
         'w': 'WEIGHTS OF STRUCTURES',
         'l': 'Lowdin Weights',
@@ -24,13 +24,13 @@ def sort_vb_weights(filename, type1='w'):
         'r': 'Renormalized Weights',
         'c': 'COEFFICIENTS OF STRUCTURES',
     }
-    wei_type1 = wei_type[type1]
+    wei_type = wei_type[weight_type]
     with open(f'{filename}.xmo', 'r') as file:
         str_data = []
         wei_start = False
 
         for line in file:
-            if wei_type1 in line:
+            if wei_type in line:
                 wei_start = True
                 next(file)
                 continue
@@ -51,15 +51,25 @@ def sort_vb_weights(filename, type1='w'):
     one = 0
     for i in range(len(str_data)):
         one += str_data[i][0]
-        print(
-            f'{i+1:>5}{str_data[i][1]:>5}{str_data[i][0]:^20.8f}{str_data[i][2]}'
-              )
+        print(f'{i + 1:>5}{str_data[i][1]:>5}{str_data[i][0]:^20.8f}{str_data[i][2]}')
     print(one)
 
 
-if __name__ == '__main__':
+def cli(argv=None):
+    parser = argparse.ArgumentParser(
+        description='Sort and print XMVB structure weights or coefficients.'
+    )
+    parser.add_argument('xmo_prefix', help='Input filename without the .xmo suffix')
+    parser.add_argument(
+        'weight_type',
+        nargs='?',
+        default='w',
+        choices=['w', 'l', 'i', 'r', 'c'],
+        help='Weight type: w, l, i, r, or c',
+    )
+    args = parser.parse_args(argv)
+    sort_vb_weights(args.xmo_prefix, args.weight_type)
 
-    if len(sys.argv) > 2:
-        sort_vb_weights(sys.argv[1], sys.argv[2])
-    else:
-        sort_vb_weights(sys.argv[1])
+
+if __name__ == '__main__':
+    cli()

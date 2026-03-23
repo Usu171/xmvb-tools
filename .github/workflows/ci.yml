@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
+    - name: Install uv
+      run: pip install uv
+    - name: Install dependencies
+      run: uv sync
+    - name: Install Ruff
+      run: pip install ruff
+    - name: Run Ruff check
+      run: uv run ruff check .
+    - name: Run Ruff format check
+      run: uv run ruff format --check .
+    - name: Run tests
+      run: uv run pytest
