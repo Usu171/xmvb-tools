@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "xmvb-tools"
-version = "0.2.0"
+version = "0.2.1"
 description = "Tools for XMVB orbital and Molden file conversion."
 readme = "README.md"
 requires-python = ">=3.10"
