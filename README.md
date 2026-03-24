@@ -1,4 +1,4 @@
-# xmvb-tools
+# XMVB-Tools
 
 `xmvb-tools` is a package for converting XMVB orbital data to and from Molden-related formats.
 
@@ -21,7 +21,8 @@ pip install xmvb-tools
 - Python 3.10+
 - `numpy`
 
-## Scripts
+
+## Usage
 
 ### `vb2molden`
 
@@ -145,3 +146,11 @@ Supported `weight_type` values:
 - `c`: `COEFFICIENTS OF STRUCTURES`
 
 default: `w`
+
+## Version support
+
+| Supported Version | XMVB 3.x (branch XMVB3) | XMVB 4.x (branch master) |
+| :---------------: | :---------------------: | :----------------------: |
+|       Fixes       |            ✅            |            ✅             |
+|  Future Updates   |            ❌            |            ✅             |
+|  Python Package   |            ❌            |            ✅             |
