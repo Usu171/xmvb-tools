@@ -18,16 +18,12 @@ import argparse
 import numpy as np
 
 try:
-    from .utils import ReadBasis, ReadGeoxmo, ReadNxmo, WriteSimpleMolden
+    from .utils import ReadBasis, ReadGeoxmo, ReadNxmo, WriteSimpleMolden, float1
 except ImportError:
-    from utils import ReadBasis, ReadGeoxmo, ReadNxmo, WriteSimpleMolden
+    from utils import ReadBasis, ReadGeoxmo, ReadNxmo, WriteSimpleMolden, float1
 
 
 NATURAL_ORBITALS_HEADER = 'COMPUTED NATURAL ORBITALS'
-
-
-def float1(num):
-    return float(num.replace('D', 'E'))
 
 
 def is_orbital_index_line(parts):
@@ -86,7 +82,9 @@ def ReadNaturalOrbitals(filename, n):
             if is_orbital_index_line(parts):
                 break
             if len(parts) < 4 + len(columns):
-                raise ValueError(f'Natural orbital row is too short in {filename}: {lines[i].rstrip()}')
+                raise ValueError(
+                    f'Natural orbital row is too short in {filename}: {lines[i].rstrip()}'
+                )
 
             row = int(parts[0]) - 1
             coeffs = [float1(value) for value in parts[4 : 4 + len(columns)]]
