@@ -19,8 +19,10 @@ import numpy as np
 
 try:
     from .molden import WriteGTO
+    from .reorder import reorder_shell
 except ImportError:
     from molden import WriteGTO
+    from reorder import reorder_shell
 
 
 basis_dict = {'S': 0, 'P': 1, 'D': 2, 'F': 3, 'G': 4, 'H': 5, 'I': 6, 'J': 7, 'K': 8}
@@ -118,30 +120,6 @@ def ReadOrbGus(filename, n):
     return matrix
 
 
-def reorderD(matrix, i):
-    temp = matrix[i + 1 : i + 6, :].copy()
-    matrix[i + 1, :] = temp[2, :]  # XY 0  YY i+1
-    matrix[i + 2, :] = temp[4, :]  # XZ 1  ZZ
-    matrix[i + 3, :] = temp[0, :]  # YY 2  XY
-    matrix[i + 4, :] = temp[1, :]  # YZ 3  XZ
-    matrix[i + 5, :] = temp[3, :]  # ZZ 4  YZ
-    return matrix
-
-
-def reorderF(matrix, i):
-    temp = matrix[i + 1 : i + 10, :].copy()
-    matrix[i + 1, :] = temp[5, :]  # XXY 0  YYY i+1
-    matrix[i + 2, :] = temp[8, :]  # XXZ 1  ZZZ
-    # XYY 2  XYY
-    matrix[i + 4, :] = temp[0, :]  # XYZ 3  XXY
-    matrix[i + 5, :] = temp[1, :]  # XZZ 4  XXZ
-    matrix[i + 6, :] = temp[4, :]  # YYY 5  XZZ
-    matrix[i + 7, :] = temp[7, :]  # YYZ 6  YZZ
-    matrix[i + 8, :] = temp[6, :]  # YZZ 7  YYZ
-    matrix[i + 9, :] = temp[3, :]  # ZZZ 8  XYZ
-    return matrix
-
-
 def cartesian_ao_count(l_val):
     return (l_val + 1) * (l_val + 2) // 2
 
@@ -200,9 +178,9 @@ def ReadBasis(filename, matrix, atom_pattern=r'\b[A-Z][a-z]?\b'):
                 line = next(file).strip()
 
             if orbital_type == 'D':
-                reorderD(matrix, count1)
+                reorder_shell(matrix, count1, 'D')
             elif orbital_type == 'F':
-                reorderF(matrix, count1)
+                reorder_shell(matrix, count1, 'F')
             count1 += cartesian_ao_count(l_val)
             gto_dict[atom_index].append([l_val, primitives])
 
@@ -295,6 +273,7 @@ def convert_xmvb_basis(gto_dict):
 def float1(num):
     return float(num.replace('D', 'E'))
 
+
 def ReadEig(filename, n):
     eigenvalues = []
     eigenvectors = np.zeros((n, n))
@@ -325,4 +304,3 @@ def SortEig(eigenvalues, eigenvectors):
     sorted_eigenvalues = eigenvalues[indices]
     sorted_eigenvectors = eigenvectors[:, indices]
     return sorted_eigenvalues, sorted_eigenvectors
-

@@ -19,8 +19,10 @@ import numpy as np
 
 try:
     from .molden import ReadMolden, WriteMolden
+    from .reorder import reorder_shell
 except ImportError:
     from molden import ReadMolden, WriteMolden
+    from reorder import reorder_shell
 
 
 def ExtractRows(matrix, atoms, column_index, position):
@@ -35,30 +37,6 @@ def ExtractRows(matrix, atoms, column_index, position):
         result[start:end, 0] = matrix[start:end, column_index]
 
     return result
-
-
-def reorderDi(matrix, i):
-    temp = matrix[i + 1 : i + 6, :].copy()
-    matrix[i + 1, :] = temp[2, :]  # YY 0  XY i+1
-    matrix[i + 2, :] = temp[3, :]  # ZZ 1  XZ
-    matrix[i + 3, :] = temp[0, :]  # XY 2  YY
-    matrix[i + 4, :] = temp[4, :]  # XZ 3  YZ
-    matrix[i + 5, :] = temp[1, :]  # YZ 4  ZZ
-    return matrix
-
-
-def reorderFi(matrix, i):
-    temp = matrix[i + 1 : i + 10,].copy()
-    matrix[i + 1, :] = temp[3, :]  # YYY 0  XXY i+1
-    matrix[i + 2, :] = temp[4, :]  # ZZZ 1  XXZ
-    # XYY 2  XYY
-    matrix[i + 4, :] = temp[8, :]  # XXY 3  XYZ
-    matrix[i + 5, :] = temp[5, :]  # XXZ 4  XZZ
-    matrix[i + 6, :] = temp[0, :]  # XZZ 5  YYY
-    matrix[i + 7, :] = temp[7, :]  # YZZ 6  YYZ
-    matrix[i + 8, :] = temp[6, :]  # YYZ 7  YZZ
-    matrix[i + 9, :] = temp[1, :]  # XYZ 8  ZZZ
-    return matrix
 
 
 def Write(filename, matrix):
@@ -151,9 +129,9 @@ Input \'q\' to write and exit\n""")
                     count = 0
                     for i in basis_type:
                         if i == 6:
-                            reorderDi(result, count)
+                            reorder_shell(result, count, 'D', inverse=True)
                         elif i == 10:
-                            reorderFi(result, count)
+                            reorder_shell(result, count, 'F', inverse=True)
                         count += i
 
                     Write(f'{filename}.gus', result)

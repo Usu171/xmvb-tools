@@ -6,6 +6,7 @@ import pytest
 
 from xmvb_tools import gus2molden, molden2gus, no2molden, vb2molden
 from xmvb_tools.molden import ReadMolden
+from xmvb_tools.reorder import reorder_shell
 
 
 DATA_DIR = Path(__file__).resolve().parent / 'data'
@@ -153,3 +154,11 @@ def test_no2molden_writes_molden_from_xmo_natural_orbitals(tmp_path: Path) -> No
     np.testing.assert_allclose(actual['occ'], expected_occ, rtol=RTOL, atol=ATOL)
     np.testing.assert_allclose(actual['orbs'], expected_orbs, rtol=RTOL, atol=ATOL)
 
+
+@pytest.mark.parametrize('shell_type, size', [('D', 6), ('F', 10)])
+def test_reorder_shell_round_trip(shell_type: str, size: int) -> None:
+    matrix = np.arange(size * 3, dtype=float).reshape(size, 3)
+    reordered = reorder_shell(matrix.copy(), 0, shell_type)
+    restored = reorder_shell(reordered.copy(), 0, shell_type, inverse=True)
+
+    np.testing.assert_array_equal(restored, matrix)
